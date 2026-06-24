@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コンテンツマーケティング 費用対効果シミュレーター｜IDEATECH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0E1726; --ink-soft:#33415A; --muted:#6B7A92;
+  --canvas:#E9EEF7; --panel:#FFFFFF; --panel-2:#F6F8FC;
+  --line:#D9E1EE; --line-soft:#EBEFF7;
+  --blue:#1A4FB0; --blue-deep:#13306B; --blue-soft:#E9F0FC;
+  --red:#C8243B; --red-deep:#9E1B32; --red-soft:#FBE9EC;
+  --amber:#D9870C; --amber-soft:#FBF0DA;
+  --green:#0E9B6E; --green-soft:#E2F4ED;
+  --jp:'Noto Sans JP',-apple-system,'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif;
+  --disp:'Space Grotesk',var(--jp);
+  --shadow:0 1px 2px rgba(16,23,38,.04),0 8px 24px rgba(16,23,38,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--jp); color:var(--ink); background:var(--canvas);
+  line-height:1.6; font-size:14px; -webkit-font-smoothing:antialiased;
+  font-feature-settings:"palt" 1;
+}
+.num{font-family:var(--disp); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.app{max-width:1240px; margin:0 auto; padding:22px 22px 60px}
+
+/* top bar */
+.topbar{display:flex; align-items:flex-end; justify-content:space-between; gap:18px; flex-wrap:wrap; padding-bottom:18px; margin-bottom:22px; border-bottom:1px solid var(--line)}
+.brand{display:flex; flex-direction:column; gap:6px}
+.eyebrow{font-family:var(--disp); font-weight:700; font-size:12px; letter-spacing:.22em; color:var(--blue); display:flex; align-items:center; gap:9px}
+.eyebrow .dots{display:inline-flex; gap:3px}
+.eyebrow .dots i{width:7px; height:7px; border-radius:2px; display:block}
+.eyebrow .dots i:nth-child(1){background:var(--blue)}
+.eyebrow .dots i:nth-child(2){background:var(--red)}
+.eyebrow .dots i:nth-child(3){background:var(--amber)}
+h1{font-size:23px; font-weight:700; letter-spacing:.01em; line-height:1.3}
+.servicechip{display:inline-flex; align-items:center; gap:8px; font-family:var(--disp); font-weight:600; font-size:12px; padding:8px 14px; border-radius:999px; background:var(--blue-soft); color:var(--blue-deep); border:1px solid transparent; transition:.25s}
+.servicechip.repo{background:var(--red-soft); color:var(--red-deep)}
+.servicechip b{font-family:var(--jp)}
+
+/* grid */
+.grid{display:grid; grid-template-columns:392px 1fr; gap:22px; align-items:start}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+
+/* cards */
+.card{background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow)}
+.controls{position:sticky; top:18px; display:flex; flex-direction:column; gap:16px}
+@media(max-width:980px){.controls{position:static}}
+.card .hd{display:flex; align-items:center; gap:10px; padding:15px 18px; border-bottom:1px solid var(--line-soft)}
+.card .hd .n{font-family:var(--disp); font-weight:700; font-size:12px; color:#fff; background:var(--ink); width:24px; height:24px; border-radius:7px; display:grid; place-items:center}
+.card .hd h2{font-size:14px; font-weight:700; letter-spacing:.02em}
+.card .bd{padding:16px 18px}
+
+/* segmented + toggle */
+.field{margin-bottom:15px}
+.field:last-child{margin-bottom:0}
+.field>label{display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:7px}
+.seg{display:grid; gap:6px; grid-auto-flow:column; grid-auto-columns:1fr}
+.seg button{font-family:var(--disp); font-weight:600; font-size:14px; padding:11px 6px; border:1px solid var(--line); background:var(--panel-2); color:var(--ink-soft); border-radius:10px; cursor:pointer; transition:.16s; line-height:1.1}
+.seg button .u{font-family:var(--jp); font-size:11px; color:var(--muted); display:block; margin-top:1px; font-weight:500}
+.seg button:hover{border-color:#b9c6dd}
+.seg button[aria-pressed="true"]{background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(26,79,176,.28)}
+.seg button[aria-pressed="true"] .u{color:rgba(255,255,255,.82)}
+.seg.repo button[aria-pressed="true"]{background:var(--red); border-color:var(--red); box-shadow:0 4px 12px rgba(200,36,59,.26)}
+.seg button:disabled{opacity:.4; cursor:not-allowed}
+.seg.two{grid-auto-columns:1fr}
+.planhint{font-size:11.5px; color:var(--muted); margin-bottom:14px; line-height:1.5}
+.svcblock{border:1px solid var(--line); border-radius:13px; padding:13px 14px; margin-bottom:11px; transition:border-color .2s,background .2s}
+.svcblock .svctop{display:flex; align-items:center; justify-content:space-between}
+.svcname{font-weight:700; font-size:14.5px; display:flex; align-items:baseline; gap:7px}
+.svcname small{font-weight:500; font-size:10.5px; color:var(--muted)}
+.svcblock.on[data-svc="risapy"]{border-color:#b9cdef; background:linear-gradient(180deg,#f4f8ff,#fff)}
+.svcblock.on[data-svc="repopy"]{border-color:#edc0c8; background:linear-gradient(180deg,#fdf5f6,#fff)}
+.svcopts{margin-top:14px; display:block}
+.svcblock:not(.on) .svcopts{display:none}
+.svcblock:not(.on){opacity:.78}
+.svcblock:not(.on) .svcname small{opacity:.7}
+.svcopts .seg button[aria-pressed="true"]{background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(26,79,176,.26)}
+.svcopts .seg button[aria-pressed="true"] .u{color:rgba(255,255,255,.82)}
+.svcblock[data-svc="repopy"] .svcopts .seg button[aria-pressed="true"]{background:var(--red); border-color:var(--red); box-shadow:0 4px 12px rgba(200,36,59,.24)}
+.switch{width:44px; height:25px; border-radius:999px; background:#cbd5e6; border:none; cursor:pointer; position:relative; transition:.22s; padding:0; flex:0 0 auto}
+.switch .dot{position:absolute; top:3px; left:3px; width:19px; height:19px; border-radius:50%; background:#fff; transition:.22s; box-shadow:0 1px 3px rgba(16,23,38,.28)}
+.switch[aria-checked="true"]{background:var(--blue)}
+.switch[aria-checked="true"] .dot{left:22px}
+#blk-repopy .switch[aria-checked="true"]{background:var(--red)}
+.switch:focus-visible{outline:2px solid var(--blue); outline-offset:2px}
+
+/* numeric inputs */
+.inrow{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px dashed var(--line-soft)}
+.inrow:last-child{border-bottom:0; padding-bottom:0}
+.inrow .lab{font-size:12.5px; color:var(--ink-soft); font-weight:500}
+.inrow .lab small{display:block; color:var(--muted); font-size:10.5px; font-weight:400; margin-top:1px}
+.inwrap{display:inline-flex; align-items:center; gap:6px; flex:0 0 auto}
+.inwrap input{width:104px; text-align:right; font-family:var(--disp); font-variant-numeric:tabular-nums; font-size:14px; font-weight:600; color:var(--ink); padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:var(--amber-soft); transition:.16s}
+.inwrap input:focus{outline:none; border-color:var(--amber); background:#fff; box-shadow:0 0 0 3px rgba(217,135,12,.18)}
+.inwrap input.pct{width:78px}
+.inwrap .unit{font-size:11px; color:var(--muted); min-width:18px}
+
+/* fee readout in plan card */
+.feebox{margin-top:16px; padding:13px 14px; border-radius:11px; background:var(--panel-2); border:1px solid var(--line-soft)}
+.feeline{display:flex; align-items:center; justify-content:space-between; font-size:12.5px; padding:3px 0}
+.feeline .v{font-family:var(--disp); font-variant-numeric:tabular-nums; font-weight:600}
+.feeline.total{border-top:1px solid var(--line); margin-top:6px; padding-top:8px}
+.feeline.total .lab{font-weight:700}
+.feeline.total .v{font-size:17px; font-weight:700; color:var(--red)}
+.lump-note{font-size:11px; color:var(--amber); margin-top:8px; display:none}
+.lump-note.show{display:block}
+
+/* advanced */
+details.adv{border-top:1px solid var(--line-soft); margin-top:4px}
+details.adv summary{list-style:none; cursor:pointer; padding:14px 18px; font-size:12px; font-weight:700; color:var(--muted); display:flex; align-items:center; justify-content:space-between}
+details.adv summary::-webkit-details-marker{display:none}
+details.adv summary .chev{transition:.2s; font-family:var(--disp)}
+details.adv[open] summary .chev{transform:rotate(90deg)}
+details.adv .bd{padding-top:2px}
+.align-btn{font-family:var(--disp); font-weight:600; font-size:11.5px; color:var(--blue); background:var(--blue-soft); border:1px solid transparent; padding:7px 11px; border-radius:8px; cursor:pointer; margin-bottom:12px; transition:.16s}
+.align-btn:hover{background:#dde9fb}
+
+/* results */
+.results{display:flex; flex-direction:column; gap:18px; min-width:0}
+
+/* hero */
+.hero{position:relative; overflow:hidden; background:linear-gradient(135deg,var(--blue-deep),var(--blue)); color:#fff; border-radius:18px; padding:28px 32px}
+.hero::after{content:""; position:absolute; right:-50px; top:-50px; width:240px; height:240px; background:radial-gradient(circle at center,rgba(255,255,255,.10),transparent 70%); pointer-events:none}
+.hero .htag{font-family:var(--disp); font-weight:600; font-size:11px; letter-spacing:.22em; color:rgba(255,255,255,.65); margin-bottom:20px}
+.flow{display:grid; grid-template-columns:1fr 46px auto 46px 1fr; align-items:center; position:relative; z-index:1}
+@media(max-width:640px){.flow{grid-template-columns:1fr; row-gap:14px; text-align:center}}
+.flow .cell{display:flex; flex-direction:column; min-width:0}
+.flow .cell.gain{align-items:flex-end; text-align:right}
+.flow .cell.center{align-items:center; text-align:center}
+@media(max-width:640px){.flow .cell,.flow .cell.gain,.flow .cell.center{align-items:center; text-align:center}}
+.flow .k{font-size:12px; color:rgba(255,255,255,.78); margin-bottom:7px; font-weight:500}
+.flow .v{font-family:var(--disp); font-variant-numeric:tabular-nums; font-weight:700; line-height:1.02; letter-spacing:-.01em; color:#fff}
+.flow .cost .v{font-size:28px}
+.flow .gain .v{font-size:31px}
+.flow .sub{font-size:11.5px; color:rgba(255,255,255,.6); margin-top:6px}
+.flow .op{font-family:var(--disp); font-size:20px; font-weight:400; color:rgba(255,255,255,.4); text-align:center}
+@media(max-width:640px){.flow .op{transform:rotate(90deg)}}
+.flow .x{font-family:var(--disp); font-weight:700; font-size:48px; line-height:.9; letter-spacing:-.02em; color:#fff}
+.flow .x span{font-size:22px; opacity:.8; font-weight:600; margin-left:1px}
+.flow .x.warn{font-size:30px}
+.flow .xlbl{font-size:11px; letter-spacing:.04em; color:rgba(255,255,255,.78); margin-top:8px; font-weight:600; white-space:nowrap}
+.hero .secondary{margin-top:22px; padding-top:18px; border-top:1px solid rgba(255,255,255,.18); display:grid; grid-template-columns:repeat(3,1fr); position:relative; z-index:1}
+@media(max-width:640px){.hero .secondary{grid-template-columns:1fr; gap:13px}}
+.hero .secondary .it{display:flex; flex-direction:column; padding:0 20px; border-left:1px solid rgba(255,255,255,.16)}
+.hero .secondary .it:first-child{padding-left:0; border-left:none}
+@media(max-width:640px){.hero .secondary .it{padding:0; border-left:none}}
+.hero .secondary .it .k{font-size:11px; color:rgba(255,255,255,.68)}
+.hero .secondary .it .v{font-family:var(--disp); font-variant-numeric:tabular-nums; font-weight:600; font-size:17px; margin-top:3px}
+.hero .secondary .it .v.neg{color:#FFB4B4}
+
+/* kpi row */
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 16px; box-shadow:var(--shadow)}
+.kpi .k{font-size:11.5px; color:var(--muted); font-weight:500; min-height:32px}
+.kpi .v{font-family:var(--disp); font-variant-numeric:tabular-nums; font-weight:700; font-size:21px; margin-top:6px; line-height:1.1}
+.kpi .v small{font-size:12px; color:var(--muted); font-weight:500; margin-left:2px}
+.kpi .v.pos{color:var(--green)} .kpi .v.neg{color:var(--red)}
+.kpi.accent{border-top:3px solid var(--blue)}
+
+/* section block */
+.block{background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:20px}
+.block h3{font-size:13px; font-weight:700; margin-bottom:3px; display:flex; align-items:center; gap:8px}
+.block h3 .tag{font-family:var(--disp); font-size:10px; font-weight:600; letter-spacing:.14em; color:var(--blue); background:var(--blue-soft); padding:2px 8px; border-radius:5px}
+.block .desc{font-size:11.5px; color:var(--muted); margin-bottom:18px}
+
+/* compare bars */
+.bars{display:flex; flex-direction:column; gap:14px}
+.barrow .top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px}
+.barrow .top .nm{font-size:12.5px; font-weight:600; color:var(--ink-soft)}
+.barrow .top .amt{font-family:var(--disp); font-variant-numeric:tabular-nums; font-weight:700; font-size:14px}
+.track{height:18px; border-radius:6px; background:var(--panel-2); overflow:hidden}
+.fill{height:100%; border-radius:6px; width:0; transition:width .6s cubic-bezier(.4,0,.2,1)}
+.fill.cost{background:linear-gradient(90deg,#d8455a,var(--red))}
+.fill.gross{background:linear-gradient(90deg,#eaa83a,var(--amber))}
+.fill.rev{background:linear-gradient(90deg,#3f74c8,var(--blue))}
+
+/* svg chart */
+.chartwrap{width:100%}
+svg.chart{width:100%; height:auto; display:block}
+.legend{display:flex; gap:18px; margin-top:10px; font-size:11.5px; color:var(--ink-soft); flex-wrap:wrap}
+.legend span{display:inline-flex; align-items:center; gap:7px}
+.legend i{width:16px; height:3px; border-radius:2px; display:block}
+.legend i.b{background:var(--blue); height:3px}
+.legend i.g{background:#9fb0c9; height:0; border-top:2px dashed #9fb0c9}
+.legend i.area{background:var(--blue-soft); height:11px; border-radius:3px; border:1px solid #cfddf6}
+
+/* funnel table */
+.ftable{width:100%; border-collapse:collapse; font-size:13px}
+.ftable th,.ftable td{padding:11px 10px; text-align:right; border-bottom:1px solid var(--line-soft)}
+.ftable th{font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.04em}
+.ftable th:first-child,.ftable td:first-child{text-align:left}
+.ftable td.metric{font-weight:600; color:var(--ink-soft)}
+.ftable td .n{font-family:var(--disp); font-variant-numeric:tabular-nums}
+.ftable td.diff .n{font-weight:700; color:var(--blue)}
+.ftable tr.rev td{border-top:2px solid var(--line); padding-top:13px}
+.ftable tr.rev td.metric{font-weight:700; color:var(--ink)}
+.ftable tr.rev td.diff .n{color:var(--red); font-size:14px}
+.ftable td .badge{display:inline-block; font-family:var(--disp); font-size:10px; font-weight:600; color:var(--green); background:var(--green-soft); padding:1px 6px; border-radius:5px; margin-left:6px}
+
+/* pricing reference */
+details.price{margin-top:0}
+details.price summary{list-style:none; cursor:pointer; font-size:13px; font-weight:700; display:flex; align-items:center; gap:8px; padding:2px}
+details.price summary::-webkit-details-marker{display:none}
+details.price summary .chev{font-family:var(--disp); transition:.2s}
+details.price[open] summary .chev{transform:rotate(90deg)}
+.ptables{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px}
+@media(max-width:680px){.ptables{grid-template-columns:1fr}}
+.ptable{border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.ptable .cap{font-weight:700; font-size:12.5px; color:#fff; padding:10px 13px}
+.ptable.risa .cap{background:var(--blue)} .ptable.repo .cap{background:var(--red)}
+.ptable table{width:100%; border-collapse:collapse; font-size:12px}
+.ptable th,.ptable td{padding:8px 9px; text-align:right; border-bottom:1px solid var(--line-soft)}
+.ptable th{font-family:var(--disp); font-weight:600; background:var(--panel-2); color:var(--ink-soft)}
+.ptable th:first-child,.ptable td:first-child{text-align:left; font-weight:600; color:var(--ink-soft); font-family:var(--jp)}
+.ptable td .n{font-family:var(--disp); font-variant-numeric:tabular-nums}
+.ptable tr.sel{background:var(--amber-soft)}
+.ptable td.selcell{background:var(--amber-soft); font-weight:700; box-shadow:inset 0 0 0 2px var(--amber); border-radius:4px}
+.ptable .initfee{font-size:11px; color:var(--muted); padding:9px 13px; background:var(--panel-2)}
+
+.foot{margin-top:30px; padding-top:16px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:11px; color:var(--muted)}
+.foot .disc{max-width:680px; line-height:1.5}
+.foot .copy{font-family:var(--disp); font-weight:600}
+
+@media(prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="eyebrow"><span class="dots"><i></i><i></i><i></i></span> IDEATECH · ROI SIMULATOR</div>
+      <h1>コンテンツマーケティング 費用対効果シミュレーター</h1>
+    </div>
+    <div class="servicechip" id="chip"><b>リサピー®</b> 6本／年</div>
+  </header>
+
+  <div class="grid">
+
+    <!-- ============ CONTROLS ============ -->
+    <aside class="controls">
+
+      <section class="card">
+        <div class="hd"><span class="n">1</span><h2>料金プラン</h2></div>
+        <div class="bd">
+          <p class="planhint">利用するサービスを選んでください。リサピー®・レポピー®の両方を同時に選ぶこともできます（初期費用は共通で1回）。</p>
+
+          <div class="svcblock on" id="blk-risapy" data-svc="risapy">
+            <div class="svctop">
+              <span class="svcname">リサピー®<small>調査PR</small></span>
+              <button class="switch" id="sw-risapy" role="switch" aria-checked="true" aria-label="リサピーを利用する"><span class="dot"></span></button>
+            </div>
+            <div class="svcopts">
+              <div class="field"><label>契約本数（年間）</label>
+                <div class="seg hon" data-svc="risapy">
+                  <button data-val="1" aria-pressed="false">1<span class="u">本</span></button>
+                  <button data-val="3" aria-pressed="false">3<span class="u">本</span></button>
+                  <button data-val="6" aria-pressed="true">6<span class="u">本</span></button>
+                  <button data-val="12" aria-pressed="false">12<span class="u">本</span></button>
+                </div>
+              </div>
+              <div class="field"><label>支払方法</label>
+                <div class="seg two pay" data-svc="risapy">
+                  <button data-val="normal" aria-pressed="true">通常<span class="u">月額</span></button>
+                  <button data-val="lump" aria-pressed="false">一括<span class="u">翌月末</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="svcblock" id="blk-repopy" data-svc="repopy">
+            <div class="svctop">
+              <span class="svcname">レポピー®<small>お役立ち資料</small></span>
+              <button class="switch" id="sw-repopy" role="switch" aria-checked="false" aria-label="レポピーを利用する"><span class="dot"></span></button>
+            </div>
+            <div class="svcopts">
+              <div class="field"><label>契約本数（年間）</label>
+                <div class="seg hon" data-svc="repopy">
+                  <button data-val="1" aria-pressed="false">1<span class="u">本</span></button>
+                  <button data-val="3" aria-pressed="true">3<span class="u">本</span></button>
+                  <button data-val="6" aria-pressed="false">6<span class="u">本</span></button>
+                  <button data-val="12" aria-pressed="false">12<span class="u">本</span></button>
+                </div>
+              </div>
+              <div class="field"><label>支払方法</label>
+                <div class="seg two pay" data-svc="repopy">
+                  <button data-val="normal" aria-pressed="true">通常<span class="u">月額</span></button>
+                  <button data-val="lump" aria-pressed="false">一括<span class="u">翌月末</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="feebox">
+            <div id="feelines"></div>
+            <div class="feeline total"><span class="lab">年間総費用</span><span class="v" id="f-total">¥2,600,000</span></div>
+            <div class="lump-note" id="lumpnote"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="hd"><span class="n">2</span><h2>貴社の現状</h2></div>
+        <div class="bd" id="now"></div>
+      </section>
+
+      <section class="card">
+        <div class="hd"><span class="n">3</span><h2>収益条件</h2></div>
+        <div class="bd" id="profit"></div>
+        <details class="adv">
+          <summary>IDEATECH 施策係数（前提値）<span class="chev">›</span></summary>
+          <div class="bd">
+            <button class="align-btn" id="alignbtn">コンテンツ実施数を契約本数に揃える</button>
+            <div id="assump"></div>
+          </div>
+        </details>
+      </section>
+
+    </aside>
+
+    <!-- ============ RESULTS ============ -->
+    <main class="results">
+
+      <section class="hero">
+        <div class="htag">12ヶ月の投資対効果</div>
+        <div class="flow">
+          <div class="cell cost">
+            <div class="k">年間投資額</div>
+            <div class="v" id="h-cost">¥2,600,000</div>
+            <div class="sub" id="h-cost-man">約260万円</div>
+          </div>
+          <div class="op">→</div>
+          <div class="cell center">
+            <div class="x" id="h-mult">5.0<span>×</span></div>
+            <div class="xlbl">売上ベース 費用対効果</div>
+          </div>
+          <div class="op">→</div>
+          <div class="cell gain">
+            <div class="k">12ヶ月で増える受注額</div>
+            <div class="v" id="h-gain">+¥12,909,660</div>
+            <div class="sub" id="h-gain-man">約1,291万円</div>
+          </div>
+        </div>
+        <div class="secondary">
+          <div class="it"><span class="k">粗利ベース 費用対効果</span><span class="v" id="h-gp">1.5×</span></div>
+          <div class="it"><span class="k">投資回収（粗利ベース）</span><span class="v" id="h-pb">8.1ヶ月</span></div>
+          <div class="it"><span class="k">12ヶ月ネット効果（粗利−費用）</span><span class="v" id="h-net">+¥1,272,898</span></div>
+        </div>
+      </section>
+
+      <section class="kpis">
+        <div class="kpi accent"><div class="k">増分受注金額（12ヶ月）</div><div class="v" id="k-rev">¥12,909,660</div></div>
+        <div class="kpi"><div class="k">増分粗利（12ヶ月）</div><div class="v" id="k-gp">¥3,872,898</div></div>
+        <div class="kpi"><div class="k">投資回収月数（粗利ベース）</div><div class="v" id="k-pb">8.1<small>ヶ月</small></div></div>
+        <div class="kpi"><div class="k">12ヶ月ネット効果（粗利−総費用）</div><div class="v pos" id="k-net">+¥1,272,898</div></div>
+      </section>
+
+      <section class="block">
+        <h3><span class="tag">COST vs RETURN</span>費用と効果の比較</h3>
+        <p class="desc">年間の投資額に対して、12ヶ月で生まれる増分の受注金額と粗利を並べています。</p>
+        <div class="bars">
+          <div class="barrow"><div class="top"><span class="nm">年間総費用</span><span class="amt" id="b-cost-amt">¥2,600,000</span></div><div class="track"><div class="fill cost" id="b-cost"></div></div></div>
+          <div class="barrow"><div class="top"><span class="nm">増分粗利（12ヶ月）</span><span class="amt" id="b-gp-amt">¥3,872,898</span></div><div class="track"><div class="fill gross" id="b-gp"></div></div></div>
+          <div class="barrow"><div class="top"><span class="nm">増分受注金額（12ヶ月）</span><span class="amt" id="b-rev-amt">¥12,909,660</span></div><div class="track"><div class="fill rev" id="b-rev"></div></div></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h3><span class="tag">12-MONTH</span>累計受注金額の推移</h3>
+        <p class="desc">導入前と導入後の累計受注金額です。塗りつぶした部分が施策による増分にあたります。横軸は経過月数（1〜12ヶ月）です。</p>
+        <div class="chartwrap">
+          <svg class="chart" id="chart" viewBox="0 0 760 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="12ヶ月の累計受注金額推移"></svg>
+        </div>
+        <div class="legend">
+          <span><i class="b"></i>導入後（累計）</span>
+          <span><i class="g"></i>導入前（累計）</span>
+          <span><i class="area"></i>施策による増分</span>
+        </div>
+      </section>
+
+      <section class="block">
+        <h3><span class="tag">FUNNEL</span>ファネル比較（年間）</h3>
+        <p class="desc">リードから受注までの年間実績の見立てです。導入後の数値は施策係数を反映しています。</p>
+        <table class="ftable">
+          <thead><tr><th>指標</th><th>導入前</th><th>導入後</th><th>差分</th></tr></thead>
+          <tbody id="ftbody"></tbody>
+        </table>
+      </section>
+
+      <section class="block">
+        <details class="price">
+          <summary><span class="chev">›</span>料金表（リサピー® ／ レポピー®）</summary>
+          <div class="ptables" id="ptables"></div>
+        </details>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="foot">
+    <div class="disc">本シミュレーションは入力値および施策係数にもとづく試算であり、効果を保証するものではありません。受注単価は1受注あたりの金額として計算しています。粗利率は自社の実態値に変更してご利用ください。</div>
+    <div class="copy">© IDEATECH Inc.</div>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- pricing (出典: リサピー®/レポピー® 基本料金スライド) ---------- */
+const PRICING = {
+  risapy:{ label:"リサピー®",
+    normal:{1:500000,3:1200000,6:2100000,12:3600000},
+    unit:{1:500000,3:400000,6:350000,12:300000},
+    lump:{3:1050000,6:1800000,12:3000000},
+    lumpUnit:{3:350000,6:300000,12:250000} },
+  repopy:{ label:"レポピー®",
+    normal:{1:800000,3:1500000,6:2700000,12:4800000},
+    unit:{1:800000,3:500000,6:450000,12:400000},
+    lump:{3:1350000,6:2400000,12:4200000},
+    lumpUnit:{3:450000,6:400000,12:350000} }
+};
+const INIT_FEE = 500000;
+const HONS = [1,3,6,12];
+
+/* ---------- state ---------- */
+const S = {
+  services:{
+    risapy:{on:true,  hon:6, pay:"normal"},
+    repopy:{on:false, hon:3, pay:"normal"}
+  },
+  // 貴社の現状
+  session:5000, houseList:1000, nonOrgLead:40, orgLeadBase:10,
+  leadToDeal:0.20, dealToOrder:0.20, orderValue:2000000,
+  // 収益条件
+  margin:0.30,
+  // 前提値 (IDEATECH係数)
+  reAcqBase:0,
+  addContent:0.5, addSeminar:0.5, addMailmag:0.5,
+  leadPerContent:3, leadPerSeminar:10, reAcqRate:0.005,
+  sessionImp:1.0, cvrImp:1.05, dealRateImp:1.05, orderRateImp:1.0, orderValueImp:1.0
+};
+const SVCS = ["risapy","repopy"];
+
+/* ---------- input definitions ---------- */
+const NOW_FIELDS = [
+  {k:"session",     lab:"流入（セッション）数", sub:"/ 月",          unit:"",  step:100},
+  {k:"houseList",   lab:"ハウスリスト数",        sub:"保有リード総数", unit:"",  step:100},
+  {k:"nonOrgLead",  lab:"新規リード獲得数",      sub:"オーガニックを除く / 月", unit:"件", step:1},
+  {k:"orgLeadBase", lab:"新規リード獲得数",      sub:"オーガニック / 月", unit:"件", step:1},
+  {k:"leadToDeal",  lab:"リード→有効商談化率",   sub:"", unit:"%", pct:true, step:1},
+  {k:"dealToOrder", lab:"有効商談→受注率",       sub:"", unit:"%", pct:true, step:1},
+  {k:"orderValue",  lab:"受注単価",              sub:"1受注あたり", unit:"円", step:100000}
+];
+const PROFIT_FIELDS = [
+  {k:"margin", lab:"粗利率", sub:"自社の実態値に変更してください", unit:"%", pct:true, step:1}
+];
+const ASSUMP_FIELDS = [
+  {k:"addContent",    lab:"追加コンテンツリリース数", sub:"/ 月", unit:"本", step:0.5},
+  {k:"addSeminar",    lab:"追加セミナー実施数",       sub:"/ 月", unit:"回", step:0.5},
+  {k:"addMailmag",    lab:"追加メルマガ配信数",       sub:"/ 月", unit:"回", step:0.5},
+  {k:"leadPerContent",lab:"新規リード獲得数",         sub:"/ 1コンテンツリリース", unit:"件", step:1},
+  {k:"leadPerSeminar",lab:"新規リード獲得数",         sub:"/ 1セミナー", unit:"件", step:1},
+  {k:"reAcqRate",     lab:"既存リード再獲得率",       sub:"/ 1メルマガ（リストに対する割合）", unit:"%", pct:true, step:0.1},
+  {k:"sessionImp",    lab:"流入数 改善率",            sub:"SEO効果", unit:"%", pct:true, step:1},
+  {k:"cvrImp",        lab:"CVR 改善率",               sub:"サイト内設置", unit:"%", pct:true, step:1},
+  {k:"dealRateImp",   lab:"有効商談率 改善率",        sub:"リードの質・IS活用", unit:"%", pct:true, step:1},
+  {k:"orderRateImp",  lab:"受注率 改善率",            sub:"営業資料への組込み", unit:"%", pct:true, step:1},
+  {k:"orderValueImp", lab:"受注単価 上昇率",          sub:"リードの質・単価改善", unit:"%", pct:true, step:1},
+  {k:"reAcqBase",     lab:"既存リード再獲得数（導入前）", sub:"/ 月", unit:"件", step:1}
+];
+
+/* ---------- build inputs ---------- */
+function buildInputs(containerId, fields){
+  const box = document.getElementById(containerId);
+  fields.forEach(f=>{
+    const row = document.createElement("div"); row.className="inrow";
+    const lab = document.createElement("div"); lab.className="lab";
+    lab.innerHTML = f.lab + (f.sub?`<small>${f.sub}</small>`:"");
+    const wrap = document.createElement("div"); wrap.className="inwrap";
+    const inp = document.createElement("input");
+    inp.type="number"; inp.id="in-"+f.k; inp.step=f.step;
+    if(f.pct) inp.classList.add("pct");
+    inp.value = f.pct ? +(S[f.k]*100).toFixed(2) : S[f.k];
+    inp.addEventListener("input",()=>{
+      let v = parseFloat(inp.value); if(isNaN(v)) v=0;
+      S[f.k] = f.pct ? v/100 : v;
+      render();
+    });
+    const u = document.createElement("span"); u.className="unit"; u.textContent=f.unit;
+    wrap.appendChild(inp); wrap.appendChild(u);
+    row.appendChild(lab); row.appendChild(wrap);
+    box.appendChild(row);
+  });
+}
+buildInputs("now",NOW_FIELDS);
+buildInputs("profit",PROFIT_FIELDS);
+buildInputs("assump",ASSUMP_FIELDS);
+
+/* ---------- plan controls (per service) ---------- */
+function wirePlan(){
+  SVCS.forEach(svc=>{
+    const sw=document.getElementById("sw-"+svc);
+    sw.addEventListener("click",()=>{
+      const on=!S.services[svc].on;
+      S.services[svc].on=on;
+      sw.setAttribute("aria-checked", on?"true":"false");
+      document.getElementById("blk-"+svc).classList.toggle("on",on);
+      render();
+    });
+    document.querySelectorAll(`.seg.hon[data-svc="${svc}"] button`).forEach(b=>{
+      b.addEventListener("click",()=>{
+        if(b.disabled) return;
+        document.querySelectorAll(`.seg.hon[data-svc="${svc}"] button`).forEach(x=>x.setAttribute("aria-pressed","false"));
+        b.setAttribute("aria-pressed","true");
+        S.services[svc].hon=parseInt(b.dataset.val,10);
+        render();
+      });
+    });
+    document.querySelectorAll(`.seg.pay[data-svc="${svc}"] button`).forEach(b=>{
+      b.addEventListener("click",()=>{
+        if(b.disabled) return;
+        document.querySelectorAll(`.seg.pay[data-svc="${svc}"] button`).forEach(x=>x.setAttribute("aria-pressed","false"));
+        b.setAttribute("aria-pressed","true");
+        S.services[svc].pay=b.dataset.val;
+        render();
+      });
+    });
+  });
+}
+wirePlan();
+
+function updateLumpAvail(){
+  SVCS.forEach(svc=>{
+    const cfg=S.services[svc];
+    const lumpBtn=document.querySelector(`.seg.pay[data-svc="${svc}"] button[data-val="lump"]`);
+    if(cfg.hon===1){
+      lumpBtn.disabled=true;
+      if(cfg.pay==="lump"){
+        cfg.pay="normal";
+        document.querySelectorAll(`.seg.pay[data-svc="${svc}"] button`).forEach(x=>x.setAttribute("aria-pressed", x.dataset.val==="normal"?"true":"false"));
+      }
+    } else { lumpBtn.disabled=false; }
+  });
+}
+
+function totalHon(){ return SVCS.reduce((s,svc)=>s+(S.services[svc].on?S.services[svc].hon:0),0); }
+
+document.getElementById("alignbtn").addEventListener("click",()=>{
+  S.addContent = totalHon()/12;
+  document.getElementById("in-addContent").value = +S.addContent.toFixed(3);
+  render();
+});
+
+/* ---------- core model (Excel 12ヶ月モデルと同一ロジック) ---------- */
+function model(){
+  const M=12;
+  const cvr = S.session>0 ? S.orgLeadBase/S.session : 0;
+  const cumB=[], cumA=[];
+  let sB_rev=0,sA_rev=0,sB_deal=0,sA_deal=0,sB_ord=0,sA_ord=0;
+  let nonOrgB=0,orgB=0,reB=0,nonOrgA=0,orgA=0,reA=0;
+  for(let m=1;m<=M;m++){
+    // 導入前
+    const sesB=S.session;
+    const noB=S.nonOrgLead, oB=S.orgLeadBase, rcB=S.reAcqBase;
+    const dlB=(noB+oB+rcB)*S.leadToDeal;
+    const orB=dlB*S.dealToOrder;
+    const rvB=orB*S.orderValue;
+    // 導入後
+    const sesA=sesB*S.sessionImp;
+    const noA=S.nonOrgLead+(S.leadPerContent*S.addContent)+(S.leadPerSeminar*S.addSeminar);
+    const oA=sesA*cvr*S.cvrImp;
+    const houseA=S.houseList+(noA+oA)*m;
+    const rcA=houseA*S.reAcqRate*S.addMailmag;
+    const dlA=(noA+oA+rcA)*S.leadToDeal*S.dealRateImp;
+    const orA=dlA*S.dealToOrder*S.orderRateImp;
+    const rvA=orA*S.orderValue*S.orderValueImp;
+    sB_rev+=rvB; sA_rev+=rvA; sB_deal+=dlB; sA_deal+=dlA; sB_ord+=orB; sA_ord+=orA;
+    nonOrgB+=noB; orgB+=oB; reB+=rcB; nonOrgA+=noA; orgA+=oA; reA+=rcA;
+    cumB.push(sB_rev); cumA.push(sA_rev);
+  }
+  return {cumB,cumA,
+    revB:sB_rev,revA:sA_rev,incRev:sA_rev-sB_rev,
+    dealB:sB_deal,dealA:sA_deal, ordB:sB_ord,ordA:sA_ord,
+    nonOrgB,orgB,reB,nonOrgA,orgA,reA};
+}
+
+function priceFor(svc){
+  const cfg=S.services[svc];
+  if(!cfg.on) return 0;
+  const p=PRICING[svc];
+  if(cfg.pay==="lump" && p.lump[cfg.hon]!=null) return p.lump[cfg.hon];
+  return p.normal[cfg.hon];
+}
+function costParts(){
+  const anyOn = SVCS.some(svc=>S.services[svc].on);
+  const init = anyOn ? INIT_FEE : 0;
+  const risa = priceFor("risapy");
+  const repo = priceFor("repopy");
+  return {init, risa, repo, total:init+risa+repo, anyOn};
+}
+
+/* ---------- formatting ---------- */
+const yen = n => "¥"+Math.round(n).toLocaleString("ja-JP");
+const yenSigned = n => (n>=0?"+":"−")+"¥"+Math.abs(Math.round(n)).toLocaleString("ja-JP");
+const man = n => "約"+Math.round(n/10000).toLocaleString("ja-JP")+"万円";
+const dec = (n,d=1) => n.toLocaleString("ja-JP",{minimumFractionDigits:d,maximumFractionDigits:d});
+
+/* ---------- animated number ---------- */
+const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const animState = {}, animRAF = {};
+function setStatic(id, html){
+  if(animRAF[id]){ cancelAnimationFrame(animRAF[id]); animRAF[id]=null; }
+  animState[id]=null;
+  document.getElementById(id).innerHTML=html;
+}
+function setNum(id, value, fmt){
+  const el = document.getElementById(id);
+  if(animRAF[id]){ cancelAnimationFrame(animRAF[id]); animRAF[id]=null; }
+  if(prefersReduced){ el.innerHTML = fmt(value); animState[id]=value; return; }
+  const from = animState[id]==null ? value : animState[id];
+  const to = value; animState[id]=to;
+  if(from===to){ el.innerHTML = fmt(to); return; }
+  const dur=420, t0=performance.now();
+  function step(now){
+    const p=Math.min(1,(now-t0)/dur);
+    const e=1-Math.pow(1-p,3);
+    el.innerHTML = fmt(from+(to-from)*e);
+    animRAF[id] = p<1 ? requestAnimationFrame(step) : null;
+  }
+  animRAF[id]=requestAnimationFrame(step);
+}
+
+/* ---------- SVG line chart ---------- */
+function drawChart(cumB,cumA){
+  const W=760,H=300, ml=64,mr=18,mt=18,mb=34;
+  const iw=W-ml-mr, ih=H-mt-mb, n=cumA.length;
+  const maxV=Math.max(cumA[n-1],cumB[n-1],1);
+  const target=maxV*1.05, rough=target/4;
+  const mag=Math.pow(10,Math.floor(Math.log10(rough))); const u=rough/mag;
+  const niceU = u<=1?1:u<=2?2:u<=2.5?2.5:u<=5?5:10;
+  const interval=niceU*mag;
+  const niceMax=Math.ceil(target/interval)*interval;
+  const steps=Math.round(niceMax/interval);
+  const X = i => ml + (iw*i/(n-1));
+  const Y = v => mt + ih - (ih*v/niceMax);
+  const ptsA = cumA.map((v,i)=>[X(i),Y(v)]);
+  const ptsB = cumB.map((v,i)=>[X(i),Y(v)]);
+  const lineA = ptsA.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+  const lineB = ptsB.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+  const area = lineA+" "+ptsB.slice().reverse().map(p=>"L"+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")+" Z";
+  // y gridlines/labels
+  let grid="", ylab="";
+  for(let g=0;g<=steps;g++){
+    const v=niceMax*g/steps, y=Y(v);
+    grid+=`<line x1="${ml}" y1="${y.toFixed(1)}" x2="${W-mr}" y2="${y.toFixed(1)}" stroke="#EBEFF7" stroke-width="1"/>`;
+    ylab+=`<text x="${ml-10}" y="${(y+4).toFixed(1)}" text-anchor="end" font-family="Space Grotesk" font-size="11" fill="#9AA7BD">${Math.round(v/10000).toLocaleString()}</text>`;
+  }
+  // x labels (all months)
+  let xlab="";
+  cumA.forEach((_,i)=>{
+    xlab+=`<text x="${X(i).toFixed(1)}" y="${H-12}" text-anchor="middle" font-family="Space Grotesk" font-size="10.5" fill="#9AA7BD">${i+1}</text>`;
+  });
+  const end=ptsA[n-1];
+  const svg=`
+    <text x="20" y="12" font-family="Noto Sans JP" font-size="10" fill="#9AA7BD">万円</text>
+    ${grid}${ylab}${xlab}
+    <path d="${area}" fill="#E9F0FC" opacity="0.9"/>
+    <path d="${lineB}" fill="none" stroke="#9FB0C9" stroke-width="2" stroke-dasharray="5 4" stroke-linejoin="round"/>
+    <path d="${lineA}" fill="none" stroke="#1A4FB0" stroke-width="2.6" stroke-linejoin="round"/>
+    <circle cx="${end[0].toFixed(1)}" cy="${end[1].toFixed(1)}" r="4.5" fill="#1A4FB0" stroke="#fff" stroke-width="2"/>
+  `;
+  document.getElementById("chart").innerHTML=svg;
+}
+
+/* ---------- funnel table ---------- */
+function buildFunnel(r){
+  const rows=[
+    {m:"新規リード（オーガニック除く）", b:r.nonOrgB, a:r.nonOrgA, d:0},
+    {m:"新規リード（オーガニック）", b:r.orgB, a:r.orgA, d:1},
+    {m:"既存リード再獲得", b:r.reB, a:r.reA, d:1},
+    {m:"有効商談", b:r.dealB, a:r.dealA, d:1},
+    {m:"受注", b:r.ordB, a:r.ordA, d:1},
+    {m:"受注金額", b:r.revB, a:r.revA, d:1, yen:true, rev:true}
+  ];
+  const tb=document.getElementById("ftbody");
+  tb.innerHTML = rows.map(row=>{
+    const f = row.yen ? yen : (v=>dec(v,row.d));
+    const diff = row.a-row.b;
+    const ds = row.yen ? yenSigned(diff) : (diff>=0?"+":"")+dec(diff,row.d);
+    return `<tr class="${row.rev?'rev':''}">
+      <td class="metric">${row.m}</td>
+      <td><span class="n">${f(row.b)}</span></td>
+      <td><span class="n">${f(row.a)}</span></td>
+      <td class="diff"><span class="n">${ds}</span></td>
+    </tr>`;
+  }).join("");
+}
+
+/* ---------- pricing reference ---------- */
+function buildPricing(){
+  const box=document.getElementById("ptables");
+  function tbl(key,cls){
+    const p=PRICING[key];
+    const cells=(obj,fmt)=>HONS.map(h=>`<td><span class="n">${obj[h]!=null?fmt(obj[h]):'—'}</span></td>`).join("");
+    return `<div class="ptable ${cls}">
+      <div class="cap">${p.label} 基本料金</div>
+      <table>
+        <thead><tr><th>本数</th>${HONS.map(h=>`<th class="hcol" data-h="${h}">${h}本</th>`).join("")}</tr></thead>
+        <tbody>
+          <tr data-r="normal"><td>合計金額（通常）</td>${cells(p.normal,yen)}</tr>
+          <tr><td>1本あたり単価</td>${cells(p.unit,yen)}</tr>
+          <tr><td>一括支払単価</td>${cells(p.lumpUnit,yen)}</tr>
+          <tr data-r="lump"><td>一括支払総額</td>${cells(p.lump,yen)}</tr>
+        </tbody>
+      </table>
+      <div class="initfee">初期費用（IDEAインサイト）：${yen(INIT_FEE)}　※両サービス発注時はまとめて1つ・一括支払は3本以上が対象</div>
+    </div>`;
+  }
+  box.innerHTML = tbl("risapy","risa")+tbl("repopy","repo");
+}
+buildPricing();
+function highlightPricing(){
+  document.querySelectorAll(".ptable td.selcell").forEach(td=>td.classList.remove("selcell"));
+  SVCS.forEach(svc=>{
+    const cfg=S.services[svc]; if(!cfg.on) return;
+    const t=document.querySelector(".ptable."+(svc==="risapy"?"risa":"repo")); if(!t) return;
+    const rowSel=(cfg.pay==="lump" && cfg.hon!==1) ? 'tr[data-r="lump"]' : 'tr[data-r="normal"]';
+    const tr=t.querySelector(rowSel); if(!tr) return;
+    const col=HONS.indexOf(cfg.hon)+1; // +1 for label cell
+    const td=tr.querySelectorAll("td")[col];
+    if(td) td.classList.add("selcell");
+  });
+}
+
+/* ---------- render ---------- */
+function render(){
+  updateLumpAvail();
+  const r = model();
+  const cp = costParts();
+  const total = cp.total;
+  const gross = r.incRev * S.margin;
+  const multRev = total>0 ? r.incRev/total : null;
+  const multGp  = total>0 ? gross/total : null;
+  const payback = (total>0 && gross>0) ? total/(gross/12) : null;
+  const net = gross - total;
+
+  // brand chip
+  const onR=S.services.risapy.on, onP=S.services.repopy.on;
+  const chip=document.getElementById("chip");
+  const parts=[];
+  if(onR) parts.push(`<b>リサピー®</b> ${S.services.risapy.hon}本`);
+  if(onP) parts.push(`<b>レポピー®</b> ${S.services.repopy.hon}本`);
+  chip.innerHTML = parts.length ? parts.join("　＋　") : "サービス未選択";
+  chip.classList.toggle("repo", onP && !onR);
+
+  // fee box (dynamic lines)
+  const feeLine=(lab,v)=>`<div class="feeline"><span class="lab">${lab}</span><span class="v">${yen(v)}</span></div>`;
+  let lines="";
+  if(cp.anyOn){
+    lines+=feeLine("初期費用（共通・1回）", cp.init);
+    if(onR) lines+=feeLine(`リサピー® ${S.services.risapy.hon}本${S.services.risapy.pay==="lump"?"（一括）":""}`, cp.risa);
+    if(onP) lines+=feeLine(`レポピー® ${S.services.repopy.hon}本${S.services.repopy.pay==="lump"?"（一括）":""}`, cp.repo);
+  } else {
+    lines+=`<div class="feeline"><span class="lab" style="color:var(--red);font-weight:700">サービスを選択してください</span></div>`;
+  }
+  document.getElementById("feelines").innerHTML=lines;
+  document.getElementById("f-total").textContent = yen(total);
+  const oneHon=(onR&&S.services.risapy.hon===1)||(onP&&S.services.repopy.hon===1);
+  const ln=document.getElementById("lumpnote");
+  ln.textContent="※1本は一括支払の対象外のため、通常料金で計算します。";
+  ln.classList.toggle("show", oneHon);
+
+  // hero
+  setNum("h-cost", total, yen);
+  document.getElementById("h-cost-man").textContent = total>0?man(total):"—";
+  setNum("h-gain", r.incRev, v=>"+"+yen(v));
+  document.getElementById("h-gain-man").textContent = man(r.incRev);
+  const hm=document.getElementById("h-mult");
+  if(multRev==null){ setStatic("h-mult","—"); hm.classList.remove("warn"); }
+  else { hm.classList.toggle("warn", multRev>=100); setNum("h-mult", multRev, v=>dec(v,1)+'<span>×</span>'); }
+  if(multGp==null){ setStatic("h-gp","—"); } else setNum("h-gp", multGp, v=>dec(v,1)+"×");
+  document.getElementById("h-pb").textContent = payback==null?"—":dec(payback,1)+"ヶ月";
+  const hnet=document.getElementById("h-net");
+  hnet.classList.toggle("neg", net<0);
+  hnet.textContent = total>0?yenSigned(net):"—";
+
+  // kpis
+  setNum("k-rev", r.incRev, yen);
+  setNum("k-gp", gross, yen);
+  document.getElementById("k-pb").innerHTML = payback==null?"—":dec(payback,1)+'<small>ヶ月</small>';
+  const kn=document.getElementById("k-net");
+  kn.classList.toggle("pos",net>=0); kn.classList.toggle("neg",net<0);
+  setNum("k-net", net, yenSigned);
+
+  // bars (scaled to incRev)
+  const base = Math.max(r.incRev, total, 1);
+  document.getElementById("b-cost").style.width = (total/base*100)+"%";
+  document.getElementById("b-gp").style.width = (Math.max(gross,0)/base*100)+"%";
+  document.getElementById("b-rev").style.width = (r.incRev/base*100)+"%";
+  document.getElementById("b-cost-amt").textContent = yen(total);
+  document.getElementById("b-gp-amt").textContent = yen(gross);
+  document.getElementById("b-rev-amt").textContent = yen(r.incRev);
+
+  drawChart(r.cumB, r.cumA);
+  buildFunnel(r);
+  highlightPricing();
+}
+
+render();
+</script>
+</body>
+</html>
